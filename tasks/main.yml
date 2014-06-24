@@ -1,0 +1,39 @@
+---
+- name: install dev-lang/php
+  portage: package=dev-lang/php:{{ php_pkg_slot }}
+  tags: [packages, install]
+
+- name: install custom runscript
+  copy: >
+    src=runscript
+    dest=/etc/init.d/php-fpm
+    owner=root group=root mode=0755
+  tags: install
+
+- name: prepare directory for pools
+  file: >
+    state=directory
+    path={{ php_fpm_conf_dir }}/pools
+    owner=root group=root mode=0755
+  tags: install
+
+- name: install php.ini config
+  template: >
+    src=php.ini.j2
+    dest={{ php_fpm_conf_dir }}/php.ini
+    owner=root group=root mode=0644
+  tags: config
+
+- name: create symlink /etc/php/fpm
+  file: >
+    state=link
+    src={{ php_fpm_conf_dir }}
+    dest=/etc/php/fpm
+    force=yes
+  tags: config
+
+- name: remove default php-fpm.conf
+  file: >
+    state=absent
+    dest={{ php_fpm_conf_dir }}/php-fpm.conf
+  tags: cleanup

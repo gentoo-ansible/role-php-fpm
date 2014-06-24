@@ -1,0 +1,121 @@
+#!/sbin/runscript
+# Copyright 1999-2014 Gentoo Foundation
+# Distributed under the terms of the GNU General Public License v2
+
+# Note: Create symlink of this script for each php-fpm pool.
+
+: ${PHP_SLOT:=$(eselect php show fpm)}
+: ${fpm_config:=/etc/php/fpm-${PHP_SLOT}/pools/${RC_SVCNAME}.ini}
+: ${name:=${RC_SVCNAME}}
+: ${pidfile:=/run/${RC_SVCNAME}/php-fpm.pid}
+
+extra_commands="configtest"
+extra_started_commands="reload"
+
+description_configtest="Run php-fpm config check."
+
+command="/usr/lib/${PHP_SLOT}/bin/php-fpm"
+command_args="--fpm-config $fpm_config --pid $pidfile"
+command_background="true"
+
+start_stop_daemon_args="--quiet"
+retry="SIGTERM/20"
+
+required_files="$fpm_config"
+
+depend() {
+	need net
+	use apache2 lighttpd nginx
+}
+
+start_pre() {
+	if [ "$RC_CMD" != "restart" ]; then
+		configtest || return 1
+	fi
+
+	# Read parameters from php-fpm pool config.
+	local user=$(get_value user $fpm_config nobody)
+	local group=$(get_value group $fpm_config nobody)
+	local listen=$(get_value listen $fpm_config)
+	local chroot_dir=$(get_value chroot $fpm_config)
+
+	checkpath -d "$(dirname $pidfile)"
+
+	# If unix socket is used (instead of TCP/IP) and the socket file is *not*
+	# located directly in /run or /var/run, then check if the directory exists
+	# and has correct privileges. If not, then correct it.
+	if [[ "$listen" == /* ]] && [[ ! "$(dirname $listen)" =~ ^(/var)?/run/?$ ]]; then
+		checkpath -d -o ${user}:${group} "$(dirname $listen)"
+	fi
+
+	# If chroot is used, prepare chroot environment.
+	if [ -n "$chroot_dir" ]; then
+		prepare_chroot "$chroot_dir"
+	fi
+}
+
+reload() {
+	ebegin "Reloading $name"
+	kill -USR2 `cat $pidfile` &>/dev/null
+
+	eend $?
+}
+
+configtest() {
+	ebegin "Checking configuration of php-fpm pool for $name"
+	$command --test --fpm-config $fpm_config &>/dev/null
+
+	if [ $? -ne 0 ]; then
+		$command --test --fpm-config $fpm_config
+	fi
+
+	eend $? "failed, please correct errors above"
+}
+
+prepare_chroot() {
+	local chroot_dir="$1"
+
+	if [ ! -d "$chroot_dir" ]; then
+		eend 1 "directory $chroot_dir for chroot does not exist!"
+	fi
+	einfo "Preparing chroot environment in $chroot_dir"
+
+	oldumask=$(umask)
+	umask 022
+	cd "$chroot_dir"
+
+	chroot_copy="
+		/dev/urandom
+		/etc/host.conf
+		/etc/hosts
+		/etc/localtime
+		/etc/nsswitch.conf
+		/etc/resolv.conf
+		/etc/services
+		/lib64/libnss_dns*so*
+		$chroot_copy"
+
+	# copy files to chroot
+	local line; for line in $chroot_copy; do
+		local src=${line%:*}
+		local dest=${chroot_dir}/${line#*:}
+		
+		if [[ "$dest" != */ ]]; then
+			dest=$(dirname "$dest")
+		fi
+		mkdir -p -- "$dest" && cp -a -- $src "$dest"/
+	done
+
+	test -e lib || ln -s lib64 lib
+
+	umask $oldumask
+}
+
+get_value() {
+	local key="$1"
+	local file="$2"
+	local default="$3"
+	
+	local value=$(sed -nE "s/^${key}\s*=\s*\"?([^\"]+)/\1/p" $file 2>/dev/null)
+	echo ${value:-$default}
+}
