@@ -99,11 +99,11 @@ prepare_chroot() {
 	local line; for line in $chroot_copy; do
 		local src=${line%:*}
 		local dest=${chroot_dir}/${line#*:}
-		
-		if [[ "$dest" != */ ]]; then
-			dest=$(dirname "$dest")
-		fi
-		mkdir -p -- "$dest" && cp -a -- $src "$dest"/
+
+		local dest_dir="$dest"
+		[[ "$dest" != */ ]] && dest_dir=$(dirname "$dest")
+
+		mkdir -p -- "$dest_dir" && cp -a -- $src "$dest"
 	done
 
 	test -e lib || ln -s lib64 lib
