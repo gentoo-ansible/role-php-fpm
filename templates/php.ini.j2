@@ -214,7 +214,7 @@ max_input_time = 60
 
 ; Maximum amount of memory a script may consume (128MB)
 ; http://php.net/memory-limit
-memory_limit = {{ php_memory_limit }}M
+memory_limit = 64M
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; Error handling and logging ;
@@ -476,11 +476,7 @@ auto_globals_jit = On
 ; Its value may be 0 to disable the limit. It is ignored if POST data reading
 ; is disabled through enable_post_data_reading.
 ; http://php.net/post-max-size
-{% if php_post_max_size > 0 %}
-post_max_size = {{ php_post_max_size }}M
-{% else %}
-post_max_size = 0
-{% endif %}
+post_max_size = 2M
 
 ; Automatically add files before PHP document.
 ; http://php.net/auto-prepend-file
@@ -598,7 +594,7 @@ enable_dl = Off
 
 ; Whether to allow HTTP file uploads.
 ; http://php.net/file-uploads
-file_uploads = {{ 'On' if php_file_uploads | bool else 'Off' }}
+file_uploads = Off
 
 ; Temporary directory for HTTP uploaded files (will use system default if not
 ; specified).
@@ -607,11 +603,7 @@ file_uploads = {{ 'On' if php_file_uploads | bool else 'Off' }}
 
 ; Maximum allowed size for uploaded files.
 ; http://php.net/upload-max-filesize
-{% if php_upload_max_filesize > 0 %}
-upload_max_filesize = {{ php_upload_max_filesize }}M
-{% else %}
-upload_max_filesize = 0
-{% endif %}
+upload_max_filesize = 2M
 
 ; Maximum number of files that can be uploaded via a single request
 max_file_uploads = 20

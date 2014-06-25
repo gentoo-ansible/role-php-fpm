@@ -5,19 +5,5 @@ php_pkg_slot: 5.5
 # Path of the FPM config directory.
 php_fpm_conf_dir: "/etc/php/fpm-php{{ php_pkg_slot }}"
 
-# Maximum amount of memory a script may consume (in megabytes).
-# Must be at least as {{php_post_max_size}}.
-php_memory_limit: 32
-
-# Whether to allow HTTP file uploads.
-php_file_uploads: true
-
-# Maximum allowed size for uploaded files (in megabytes).
-php_upload_max_filesize: 8
-
-# Maximum size of POST data that PHP will accept (in megabytes), or 0 to
-# disable the limit. Must be greater than equal to {{php_upload_max_filesize}}.
-php_post_max_size: "{{ php_upload_max_filesize }}"
-
 # List of functions to disable for security reasons.
 php_disable_functions: [exec, passthru, shell_exec, system, proc_open, popen, curl_exec, curl_multi_exec, parse_ini_file, show_source]
