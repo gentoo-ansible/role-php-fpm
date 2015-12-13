@@ -6,4 +6,4 @@ php_pkg_slot: 5.5
 php_fpm_conf_dir: "/etc/php/fpm-php{{ php_pkg_slot }}"
 
 # List of functions to disable for security reasons.
-php_disable_functions: [exec, passthru, shell_exec, system, proc_open, popen, curl_exec, curl_multi_exec, show_source]
+php_disable_functions: [curl_exec, curl_multi_exec, passthru, pcntl_exec, popen, proc_open, shell_exec, show_source, system, exec]
